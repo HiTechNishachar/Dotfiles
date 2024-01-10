@@ -17,12 +17,12 @@ elif [ -f /etc/bash_completion ]; then
 fi
 
 ### EXPORT
-export TERM="xterm-256color"                      # getting proper colors
-export HISTCONTROL=ignoreboth                     # no duplicate entries or spaced commands
-export HISTTIMEFORMAT=" %d/%m/%y %T "               # history to show date and time
-# export ALTERNATE_EDITOR=""                        # setting for emacsclient
-# export EDITOR="emacsclient -t -a ''"              # $EDITOR use Emacs in terminal
-# export VISUAL="emacsclient -c -a emacs"           # $VISUAL use Emacs in GUI mode
+export TERM="xterm-256color"                      	# getting proper colors
+export HISTCONTROL=erasedups:ignoredups:ignorespace	# no duplicate entries or spaced commands
+export HISTTIMEFORMAT=" %d/%m/%y %T "               	# history to show date and time
+# export ALTERNATE_EDITOR=""                        	# setting for emacsclient
+# export EDITOR="emacsclient -t -a ''"              	# $EDITOR use Emacs in terminal
+# export VISUAL="emacsclient -c -a emacs"           	# $VISUAL use Emacs in GUI mode
 
 ### SET MANPAGER
 ### Uncomment only one of these!
