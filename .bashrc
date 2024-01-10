@@ -119,6 +119,14 @@ ex ()
   fi
 }
 
+# Alias's for archives
+alias mktar='tar -cvf'
+alias mkbz2='tar -cvjf'
+alias mkgz='tar -cvzf'
+alias untar='tar -xvf'
+alias unbz2='tar -xvjf'
+alias ungz='tar -xvzf'
+
 
 cpg ()
 {
@@ -227,7 +235,9 @@ alias fgrep='fgrep --color=auto'
 alias df='df -h'                          # human-readable sizes
 alias free='free -m'                      # show sizes in MB
 
-# ps
+# Search running processes
+alias p="ps aux | grep "
+alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 alias psa="ps auxf"
 alias psgrep="ps aux | grep -v grep | grep -i -e VSZ -e"
 alias psmem='ps auxf | sort -nr -k 4'
@@ -251,6 +261,11 @@ alias playmp3='vlc *.mp3'
 alias playavi='vlc *.avi'
 alias playmov='vlc *.mov'
 alias playmp4='vlc *.mp4'
+
+# Display image files in current dir by type
+alias showjpg='feh *.jpg'
+alias showjpeg='feh *.jpeg'
+alias showpng='feh *.png'
 
 # Alias's to modified commands
 alias cp='cp -i'
@@ -303,9 +318,7 @@ alias 777='chmod -R 777'
 # Search command line history
 alias h="history | grep "
 
-# Search running processes
-alias p="ps aux | grep "
-alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
+
 
 # Search files in the current folder
 alias f="find . | grep "
@@ -328,7 +341,7 @@ alias checkcommand="type -t"
 # Show open ports
 alias openports='netstat -nape --inet'
 
-# Alias's for safe and forced reboots
+# Alias's for safe and forced reboots and shutdown
 alias reboot='sudo shutdown -r now'
 alias rebootforce='sudo shutdown -r -n now'
 alias shutdown='sudo shutdown -h now'
@@ -339,6 +352,7 @@ alias graphics-integrated='sudo envycontrol -s integrated'
 alias graphics-hybrid='sudo envycontrol -s hybrid --rtd3'
 alias graphics-nvidia='sudo envycontrol -s nvidia --force-comp --coolbits 24'
 alias graphics-reset='sudo envycontrol --reset'
+
 # Alias's to show disk space and space used in a folder
 alias diskspace="du -S | sort -n -r |more"
 alias folders='du -h --max-depth=1'
@@ -347,27 +361,10 @@ alias tree='tree -CAhF --dirsfirst'
 alias treed='tree -CAFd'
 alias mountedinfo='df -hT'
 
-# Alias's for archives
-alias mktar='tar -cvf'
-alias mkbz2='tar -cvjf'
-alias mkgz='tar -cvzf'
-alias untar='tar -xvf'
-alias unbz2='tar -xvjf'
-alias ungz='tar -xvzf'
-
-# Reload wifi driver
-#alias relwifi='sudo modprobe -r rtw_8723de; sudo modprobe rtw_8723de ant_sel=2'
-
 # Show all logs in /var/log
 alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' ' -f1 | sed -e's/:$//g' | grep -v '[0-9]$' | xargs tail -f"
 
-# SHA1
-alias sha1='openssl sha1'
-
 alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
 
-# KITTY - alias to be able to use kitty features when connecting to remote servers(e.g use tmux on remote server)
-
-alias kssh="kitty +kitten ssh"
 neofetch
 date
