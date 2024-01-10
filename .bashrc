@@ -18,7 +18,8 @@ fi
 
 ### EXPORT
 export TERM="xterm-256color"                      # getting proper colors
-export HISTCONTROL=ignoredups:erasedups           # no duplicate entries
+export HISTCONTROL=ignoreboth                     # no duplicate entries or spaced commands
+export HISTTIMEFORMAT=" %d/%m/%y %T "               # history to show date and time
 # export ALTERNATE_EDITOR=""                        # setting for emacsclient
 # export EDITOR="emacsclient -t -a ''"              # $EDITOR use Emacs in terminal
 # export VISUAL="emacsclient -c -a emacs"           # $VISUAL use Emacs in GUI mode
@@ -173,6 +174,10 @@ install_bashrc_support ()
 	fi
 }
 
+#Variables
+#History
+
+
 # Install Starship - curl -sS https://starship.rs/install.sh | sh
 
 eval "$(starship init bash)"
@@ -305,8 +310,17 @@ alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 # Search files in the current folder
 alias f="find . | grep "
 
+alias btop='btop --utf-force'
+
 # Count all files (recursively) in the current folder
 alias countfiles="for t in files links directories; do echo \`find . -type \${t:0:1} | wc -l\` \$t; done 2> /dev/null"
+
+# Apt alias
+alias update='sudo apt update '
+alias upgrade='sudo apt upgrade '
+alias search='apt search '
+alias install='sudo apt install '
+alias purge='sudo apt purge '
 
 # To see if a command is aliased, a file, or a built-in command
 alias checkcommand="type -t"
@@ -315,9 +329,16 @@ alias checkcommand="type -t"
 alias openports='netstat -nape --inet'
 
 # Alias's for safe and forced reboots
-alias rebootsafe='sudo shutdown -r now'
+alias reboot='sudo shutdown -r now'
 alias rebootforce='sudo shutdown -r -n now'
+alias shutdown='sudo shutdown -h now'
 
+# Alias's for graphics and power
+# github link for envycontrol https://github.com/bayasdev/envycontrol/releases
+alias graphics-integrated='sudo envycontrol -s integrated'
+alias graphics-hybrid='sudo envycontrol -s hybrid --rtd3'
+alias graphics-nvidia='sudo envycontrol -s nvidia --force-comp --coolbits 24'
+alias graphics-reset='sudo envycontrol --reset'
 # Alias's to show disk space and space used in a folder
 alias diskspace="du -S | sort -n -r |more"
 alias folders='du -h --max-depth=1'
@@ -334,6 +355,9 @@ alias untar='tar -xvf'
 alias unbz2='tar -xvjf'
 alias ungz='tar -xvzf'
 
+# Reload wifi driver
+#alias relwifi='sudo modprobe -r rtw_8723de; sudo modprobe rtw_8723de ant_sel=2'
+
 # Show all logs in /var/log
 alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' ' -f1 | sed -e's/:$//g' | grep -v '[0-9]$' | xargs tail -f"
 
@@ -345,3 +369,5 @@ alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
 # KITTY - alias to be able to use kitty features when connecting to remote servers(e.g use tmux on remote server)
 
 alias kssh="kitty +kitten ssh"
+neofetch
+date
