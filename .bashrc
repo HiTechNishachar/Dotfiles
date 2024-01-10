@@ -175,7 +175,7 @@ install_bashrc_support ()
 		sudo zypper install tree
 		sudo zypper install joe
 	elif [ $dtype == "debian" ]; then
-		sudo apt-get install multitail tree joe
+		sudo apt-get install multitail tree joe autojump neofetch
 	elif [ $dtype == "gentoo" ]; then
 		sudo emerge multitail
 		sudo emerge tree
