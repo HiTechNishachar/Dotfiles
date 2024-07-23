@@ -384,8 +384,6 @@ alias aptp='sudo apt purge '
 alias aptp='sudo apt remove '
 alias aptg='sudo apt-get'
 
-alias screenrecord='ffmpeg -video_size 1920x1080 -framerate 30 -f x11grab -i :0.0 -map '0' '
-
 # To see if a command is aliased, a file, or a built-in command
 alias checkcommand="type -t"
 
