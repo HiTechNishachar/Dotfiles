@@ -79,8 +79,8 @@ alias openports='netstat -nape --inet'
 # Disable NVIDIA GPU entirely (Max Battery)
 gpu-off() {
     echo -e "\n[\e[31mDisabling NVIDIA GPU\e[0m] Writing manual blacklists..."
-    sudo sh -c 'echo -e "blacklist nouveau\nblacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset" > /etc/modprobe.d/disable-nvidia.conf'
-    sudo sh -c 'echo "ACTION==\"add\", SUBSYSTEM==\"pci\", ATTR{vendor}==\"0x10de\", ATTR{class}==\"0x030000\", ATTR{remove}=\"1\"" > /etc/udev/rules.d/00-disable-nvidia.rules'
+    sudo sh -c 'printf "install nouveau /bin/false\ninstall nvidia /bin/false\ninstall nvidia_drm /bin/false\ninstall nvidia_modeset /bin/false\n" > /etc/modprobe.d/disable-nvidia.conf'
+    sudo sh -c 'echo "ACTION==\"add\", SUBSYSTEM==\"pci\", ATTR{vendor}==\"0x10de\", ATTR{class}==\"0x030000\", RUN+=\"/bin/sh -c '\''echo 1 > /sys/bus/pci/devices/0000:01:00.0/remove'\''\"" > /etc/udev/rules.d/00-disable-nvidia.rules'
     sudo update-initramfs -u
     echo -e "Done. \e[1;33mPlease reboot to apply.\e[0m\n"
 }
@@ -158,7 +158,7 @@ myhelp() {
     echo -e ""
     echo -e "\e[1;32mSYSTEM & LOGS:\e[0m"
     echo -e "  sysfails        : Show crashed systemd services"
-    echo -e "  syserrors       : Show kernel/hardware errors via journalctl"
+    echo -e "  syserrors       : Show kernel/hardware errors via journalctl (use sudo)"
     echo -e "  sysauth         : Watch SSH/sudo attempts live"
     echo -e "  openports       : Show all open network ports"
     echo -e ""
