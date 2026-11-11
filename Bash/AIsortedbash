@@ -13,6 +13,13 @@ set -o vi
 bind -m vi-command 'Control-l: clear-screen'
 bind -m vi-insert 'Control-l: clear-screen'
 
+# Enable bash programmable completion features
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+fi
+
 # =============================================================================
 # 2. PATH EXPORTS
 # =============================================================================
@@ -27,15 +34,13 @@ bind "set completion-ignore-case on"
 # =============================================================================
 # 3. ALIASES: SAFETY & BASICS
 # =============================================================================
-# Stop yourself from accidentally deleting/overwriting files
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-# Simplified list commands (You only really need these 3)
-alias ls='ls -aFh --color=always'  # Standard colored list
-alias ll='ls -lah --color=always'  # Long list (permissions, hidden files)
-alias lt='ls -ltrh'                # Sort by newest last (great for logs)
+alias ls='ls -aFh --color=always'
+alias ll='ls -lah --color=always'
+alias lt='ls -ltrh'
 
 alias cls='clear'
 alias vim="nvim"
@@ -46,10 +51,9 @@ alias grep='grep --color=auto'
 # =============================================================================
 alias ..='cd ..'
 alias ...='cd ../..'
-alias ..2='cd ../../..'
-alias bd='cd "$OLDPWD"'            # Go back to the last directory you were in
+alias .3='cd ../../..'
+alias bd='cd "$OLDPWD"'
 
-# Reload bashrc easily
 alias sbrc="source ~/.bashrc && echo 'Bashrc reloaded!'"
 alias ebrc="nvim ~/.bashrc"
 
@@ -64,13 +68,11 @@ alias purge='sudo apt purge'
 # =============================================================================
 # 6. SYSTEM DIAGNOSTICS & LOG HUNTERS
 # =============================================================================
-# Replace complex journalctl commands with easy words
 alias sysfails='systemctl --failed'
 alias syserrors='journalctl -p 3 -xb'
 alias sysauth='journalctl -u ssh.service -u sudo -f'
 alias openports='netstat -nape --inet'
 
-# GPU Controls
 alias gpu-int='sudo envycontrol -s integrated'
 alias gpu-hyb='sudo envycontrol -s hybrid --rtd3'
 alias gpu-nvd='sudo envycontrol -s nvidia --force-comp --coolbits 24'
@@ -78,22 +80,18 @@ alias gpu-nvd='sudo envycontrol -s nvidia --force-comp --coolbits 24'
 # =============================================================================
 # 7. CUSTOM FUNCTIONS (FILE OPS & EXTRACTION)
 # =============================================================================
-# Create a folder AND go into it immediately
 mkdirg() {
     mkdir -p "$1" && cd "$1"
 }
 
-# Copy a file to a folder AND go into that folder
 cpg() {
     cp "$1" "$2" && cd "$2"
 }
 
-# Move a file to a folder AND go into that folder
 mvg() {
     mv "$1" "$2" && cd "$2"
 }
 
-# Universal Extractor: Extracts ANY archive format
 ex() {
     if [ -f "$1" ]; then
         case $1 in
@@ -118,14 +116,12 @@ ex() {
 # =============================================================================
 # 8. DASHBOARD & CHEATSHEET
 # =============================================================================
-
-# The Cheatsheet Function - Type 'cs' anytime to see this
-cs() {
+myhelp() {
     echo -e "\e[1;36m===========================================================\e[0m"
     echo -e "\e[1;33m                YOUR BASHRC CHEATSHEET\e[0m"
     echo -e "\e[1;36m===========================================================\e[0m"
     echo -e "\e[1;32mNAVIGATION:\e[0m"
-    echo -e "  .. / ... / ..2   : Move up 1, 2, or 3 directories"
+    echo -e "  .. / ... / .3   : Move up 1, 2, or 3 directories"
     echo -e "  bd              : Go back to previous directory"
     echo -e "  ebrc / sbrc     : Edit or Source this .bashrc file"
     echo -e ""
@@ -148,7 +144,6 @@ cs() {
     echo -e "\e[1;36m===========================================================\e[0m"
 }
 
-# The Fast System Dashboard
 sysinfo() {
     echo -e "\n\e[1m=======================================================================\e[0m"
     echo -e "\e[1;36m 🐧 DEBIAN SYSTEM DASHBOARD \e[0m"
@@ -182,7 +177,270 @@ sysinfo() {
 }
 
 # =============================================================================
-# 9. STARTUP EXECUTION
+# 9. CUSTOM PROMPT (NIX TRICKS)
+# =============================================================================
+config() {
+    # Define prompt segments
+    declare -ag segments=(identity timestamp path git prompt)
+    declare -ag dynamics=(identity git)
+
+    # Define active features
+    declare -g use_colors=true
+    declare -g use_glyphs=true
+    declare -g use_badges=true
+
+    # Define custom colors
+    declare -g color_primary="#f5992e"
+    declare -g color_secondary="#785cea"
+    declare -g color_neutral="#5f5f87"
+    declare -g color_global
+
+    declare -g glyph_badge_left=""
+    declare -g glyph_badge_right=""
+
+    # Define main color
+    if is_root; then
+        color_global=$color_secondary
+    else
+        color_global=$color_primary
+    fi
+
+    # Prevent NF glyphs on console sessions
+    if is_console; then use_glyphs=false; fi
+
+    # Define prompt variables
+    PS1=""
+    PS2="→ "
+    PROMPT_DIRTRIM=2
+    export GIT_PS1_SHOWUNTRACKEDFILES=1
+    export GIT_PS1_SHOWDIRTYSTATE=1
+
+    # Preserve prompt command (i.e. not to break VTE)
+    if [[ $PROMPT_COMMAND != *__print_blank* ]]; then
+        PROMPT_COMMAND="${PROMPT_COMMAND%;}"
+        PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }__print_blank"
+    fi
+}
+
+init() {
+    for segment in "${segments[@]}"; do
+        local renderer="render_$segment"
+
+        # Skip segments without renderers
+        if ! declare -F "$renderer" > /dev/null; then continue; fi
+
+        if [[ "${dynamics[*]}" =~ $segment ]]; then
+            # Evaluate every time
+            PS1+="\$($renderer) "
+        else
+            # Evaluate only once
+            PS1+="$($renderer) "
+        fi
+    done
+}
+
+render_identity() {
+    local cmd_status=$?
+    local glyph
+    local label
+
+    # Define glyph
+    if is_error "$cmd_status"; then
+        if $use_glyphs; then glyph=""; else glyph="!"; fi
+        # Add blinking effect to error state glyph
+        glyph="\001\033[5m\002$glyph\001\033[25m\002"
+    elif is_ssh; then
+        if $use_glyphs; then glyph="󰌘"; else glyph="*"; fi
+    elif is_root; then
+        if $use_glyphs; then glyph=""; else glyph="#"; fi
+    else
+        if $use_glyphs; then glyph=""; else glyph="$"; fi
+    fi
+
+    # Define label
+    if is_ssh || is_su; then
+        label="$USER@$HOSTNAME"
+    elif is_git; then
+        label=$(get_git_project)
+    else
+        label="${HOSTNAME%%.*}"
+    fi
+
+    # Rendering logic
+    if $use_badges; then
+        make_badge "$glyph $label"
+    else
+        make_label "$glyph $label"
+    fi
+}
+
+render_timestamp() {
+    local label="\T"
+
+    # Rendering logic
+    if $use_badges; then
+        make_label "$label"
+    else
+        make_label "[$label]" "$color_neutral"
+    fi
+}
+
+render_path() {
+    local glyph=""
+    local label="\w"
+
+    # Rendering logic
+    if $use_glyphs; then
+        printf "%s %s" "$(make_label "$glyph")" "$label"
+    else
+        printf "%s" "$label"
+    fi
+}
+
+render_git() {
+    local glyph=""
+    local label="%s"
+    local format
+
+    # Prevent if not a repository
+    if ! is_git; then return 1; fi
+
+    # Use brackets instead of badges
+    if ! $use_badges; then
+        label="($label)"
+    fi
+
+    # Prepend glyph to label
+    if $use_glyphs; then
+        label="$glyph $label"
+    fi
+
+    # Build format string
+    if $use_badges; then
+        format="$(make_badge "$label" "$color_neutral")"
+    elif $use_colors; then
+        format="$(make_label "$label" "$color_secondary")"
+    else
+        format="$label"
+    fi
+
+    # Safe git prompt
+    if command -v __git_ps1 > /dev/null 2>&1; then
+        __git_ps1 "$format"
+    fi
+}
+
+render_prompt() {
+    local glyph
+
+    # Define glyph
+    if $use_glyphs && $use_badges; then glyph="󱞩"; else glyph="→"; fi
+
+    # Prepend space character to match badge
+    if $use_badges; then glyph=" $glyph"; fi
+
+    # Use bold glyph
+    if $use_glyphs && $use_badges; then
+        glyph="\001\033[1m\002$glyph\001\033[0m\002"
+    fi
+
+    # Prepend newline character
+    printf "\n%s" "$(make_label "$glyph")"
+}
+
+hex_to_ansi() {
+    local hex=${1#\#}
+    local include_bg=${2:-false}
+
+    local r=$((16#${hex:0:2}))
+    local g=$((16#${hex:2:2}))
+    local b=$((16#${hex:4:2}))
+
+    if $include_bg; then
+        printf "30;48;2;%s;%s;%s" "$r" "$g" "$b"
+    else
+        printf "2;%s;%s;%s" "$r" "$g" "$b"
+    fi
+}
+
+make_label() {
+    local content=$1
+    local color=${2:-$color_global}
+
+    # Prevent empty content
+    if [[ -z $content ]]; then return 1; fi
+
+    if $use_colors; then
+        printf "\001\033[38;%sm\002" "$(hex_to_ansi "$color")"
+    fi
+
+    printf "%b" "$content"
+
+    if $use_colors; then
+        printf "\001\033[0m\002"
+    fi
+}
+
+make_badge() {
+    local content=$1
+    local color=${2:-$color_global}
+    local glyph_left
+    local glyph_right
+    local ansi_sequence
+
+    # Prevent empty content
+    if [[ -z $content ]]; then return 1; fi
+
+    if $use_glyphs; then
+        # Use NF rounded corners
+        glyph_left=$glyph_badge_left
+        glyph_right=$glyph_badge_right
+    else
+        # Use plain padding
+        content=" $content "
+    fi
+
+    if $use_colors; then
+        ansi_sequence=$(hex_to_ansi "$color" true)
+    else
+        # Reverse video
+        ansi_sequence=7
+    fi
+
+    printf "%s" "$(make_label "$glyph_left" "$color")"
+    printf "\001\033[%sm\002" "$ansi_sequence"
+    printf "%b" "$content"
+    printf "\001\033[0m\033[K\002"
+    printf "%s" "$(make_label "$glyph_right" "$color")"
+}
+
+is_root() { [[ $EUID -eq 0 ]]; }
+is_su() { [[ -n $LOGNAME && $USER != "$LOGNAME" ]]; }
+is_ssh() { [[ -n "$SSH_CLIENT" ]]; }
+is_console() { [[ -t 1 && $TERM == linux ]]; }
+is_error() { [[ $1 -ne 0 && $1 -ne 130 ]]; }
+is_git() { [[ -n $(get_git_project) ]]; }
+
+get_git_project() {
+    if ! command -v git > /dev/null 2>&1; then return 1; fi
+    local git_root
+    if git_root=$(git rev-parse --show-toplevel 2>/dev/null); then
+        printf "%s" "${git_root##*/}"
+    fi
+}
+
+__print_blank() { [[ -n $__was_printed ]] && echo; __was_printed=1; }
+alias clear="command clear; unset __was_printed"
+
+# Enable git prompt functionality if available on Debian
+if [ -f /usr/lib/git-core/git-sh-prompt ]; then
+    source /usr/lib/git-core/git-sh-prompt
+fi
+
+config && init
+
+# =============================================================================
+# 10. STARTUP EXECUTION
 # =============================================================================
 greetings() {
     DAY=$(date "+%A")
@@ -197,7 +455,5 @@ greetings() {
     esac
 }
 
-# Initialize Prompt and Run Startup Functions
-eval "$(starship init bash)"
 greetings
 sysinfo
