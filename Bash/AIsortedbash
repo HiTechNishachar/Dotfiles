@@ -455,5 +455,6 @@ greetings() {
     esac
 }
 
-greetings
 sysinfo
+fortune -os
+greetings
