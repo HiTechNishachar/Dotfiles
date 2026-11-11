@@ -1,0 +1,203 @@
+# =============================================================================
+# 1. CORE SYSTEM SETTINGS
+# =============================================================================
+export TERM="xterm-256color"
+export HISTCONTROL=erasedups:ignoredups:ignorespace
+export HISTTIMEFORMAT=" %d/%m/%y %T "
+
+# Set nvim as the default manpager for better reading
+export MANPAGER="nvim +Man!"
+
+# Enable vi mode in terminal
+set -o vi
+bind -m vi-command 'Control-l: clear-screen'
+bind -m vi-insert 'Control-l: clear-screen'
+
+# =============================================================================
+# 2. PATH EXPORTS
+# =============================================================================
+[[ -d "$HOME/.bin" ]] && PATH="$HOME/.bin:$PATH"
+[[ -d "$HOME/.local/bin" ]] && PATH="$HOME/.local/bin:$PATH"
+[[ -d "$HOME/.cargo/bin" ]] && PATH="$HOME/.cargo/bin:$PATH"
+[[ -d "/var/lib/flatpak/exports/bin/" ]] && PATH="/var/lib/flatpak/exports/bin/:$PATH"
+[[ -d "/.local/share/flatpak/exports/bin" ]] && PATH="/.local/share/flatpak/exports/bin:$PATH"
+
+bind "set completion-ignore-case on"
+
+# =============================================================================
+# 3. ALIASES: SAFETY & BASICS
+# =============================================================================
+# Stop yourself from accidentally deleting/overwriting files
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Simplified list commands (You only really need these 3)
+alias ls='ls -aFh --color=always'  # Standard colored list
+alias ll='ls -lah --color=always'  # Long list (permissions, hidden files)
+alias lt='ls -ltrh'                # Sort by newest last (great for logs)
+
+alias cls='clear'
+alias vim="nvim"
+alias grep='grep --color=auto'
+
+# =============================================================================
+# 4. ALIASES: NAVIGATION SPEED-BOOSTERS
+# =============================================================================
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ..2='cd ../../..'
+alias bd='cd "$OLDPWD"'            # Go back to the last directory you were in
+
+# Reload bashrc easily
+alias sbrc="source ~/.bashrc && echo 'Bashrc reloaded!'"
+alias ebrc="nvim ~/.bashrc"
+
+# =============================================================================
+# 5. DEBIAN PACKAGE MANAGEMENT
+# =============================================================================
+alias update='sudo apt update && sudo apt upgrade -y'
+alias install='sudo apt install -y'
+alias search='apt search'
+alias purge='sudo apt purge'
+
+# =============================================================================
+# 6. SYSTEM DIAGNOSTICS & LOG HUNTERS
+# =============================================================================
+# Replace complex journalctl commands with easy words
+alias sysfails='systemctl --failed'
+alias syserrors='journalctl -p 3 -xb'
+alias sysauth='journalctl -u ssh.service -u sudo -f'
+alias openports='netstat -nape --inet'
+
+# GPU Controls
+alias gpu-int='sudo envycontrol -s integrated'
+alias gpu-hyb='sudo envycontrol -s hybrid --rtd3'
+alias gpu-nvd='sudo envycontrol -s nvidia --force-comp --coolbits 24'
+
+# =============================================================================
+# 7. CUSTOM FUNCTIONS (FILE OPS & EXTRACTION)
+# =============================================================================
+# Create a folder AND go into it immediately
+mkdirg() {
+    mkdir -p "$1" && cd "$1"
+}
+
+# Copy a file to a folder AND go into that folder
+cpg() {
+    cp "$1" "$2" && cd "$2"
+}
+
+# Move a file to a folder AND go into that folder
+mvg() {
+    mv "$1" "$2" && cd "$2"
+}
+
+# Universal Extractor: Extracts ANY archive format
+ex() {
+    if [ -f "$1" ]; then
+        case $1 in
+            *.tar.bz2)   tar xjf "$1"   ;;
+            *.tar.gz)    tar xzf "$1"   ;;
+            *.bz2)       bunzip2 "$1"   ;;
+            *.rar)       unrar x "$1"   ;;
+            *.gz)        gunzip "$1"    ;;
+            *.tar)       tar xf "$1"    ;;
+            *.zip)       unzip "$1"     ;;
+            *.7z)        7z x "$1"      ;;
+            *.tar.xz)    tar xf "$1"    ;;
+            *.tar.zst)   unzstd "$1"    ;;
+            *.deb)       ar x "$1"      ;;
+            *)           echo "'$1' cannot be extracted via ex()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# =============================================================================
+# 8. DASHBOARD & CHEATSHEET
+# =============================================================================
+
+# The Cheatsheet Function - Type 'cs' anytime to see this
+cs() {
+    echo -e "\e[1;36m===========================================================\e[0m"
+    echo -e "\e[1;33m                YOUR BASHRC CHEATSHEET\e[0m"
+    echo -e "\e[1;36m===========================================================\e[0m"
+    echo -e "\e[1;32mNAVIGATION:\e[0m"
+    echo -e "  .. / ... / ..2   : Move up 1, 2, or 3 directories"
+    echo -e "  bd              : Go back to previous directory"
+    echo -e "  ebrc / sbrc     : Edit or Source this .bashrc file"
+    echo -e ""
+    echo -e "\e[1;32mFILE OPERATIONS:\e[0m"
+    echo -e "  mkdirg <dir>    : Make directory and enter it"
+    echo -e "  cpg <f> <d>     : Copy file to dir and enter it"
+    echo -e "  mvg <f> <d>     : Move file to dir and enter it"
+    echo -e "  ex <archive>    : Extract ANY archive format"
+    echo -e ""
+    echo -e "\e[1;32mSYSTEM & LOGS:\e[0m"
+    echo -e "  update          : Apt update + upgrade"
+    echo -e "  install <pkg>   : Apt install"
+    echo -e "  sysinfo         : Print system dashboard"
+    echo -e "  sysfails        : Show crashed systemd services"
+    echo -e "  syserrors       : Show kernel/hardware errors"
+    echo -e "  sysauth         : Watch SSH/sudo attempts live"
+    echo -e ""
+    echo -e "\e[1;32mGRAPHICS (EnvyControl):\e[0m"
+    echo -e "  gpu-int / gpu-hyb / gpu-nvd"
+    echo -e "\e[1;36m===========================================================\e[0m"
+}
+
+# The Fast System Dashboard
+sysinfo() {
+    echo -e "\n\e[1m=======================================================================\e[0m"
+    echo -e "\e[1;36m 🐧 DEBIAN SYSTEM DASHBOARD \e[0m"
+    echo -e "\e[1m=======================================================================\e[0m"
+    
+    local OS=$(grep "^PRETTY_NAME=" /etc/os-release | cut -d '=' -f 2 | tr -d '"')
+    local KERNEL=$(uname -r)
+    local UPTIME=$(uptime -p | sed 's/up //')
+    
+    echo -e "[OS]      : $OS"
+    echo -e "[Kernel]  : $KERNEL"
+    echo -e "[Uptime]  : $UPTIME"
+    echo "-----------------------------------------------------------------------"
+    
+    local CPU=$(lscpu | grep "Model name:" | head -n 1 | sed -r 's/Model name:\s{1,}//g')
+    local MEM_TOTAL=$(free -h | awk '/^Mem:/ {print $2}')
+    local MEM_USED=$(free -h | awk '/^Mem:/ {print $3}')
+    
+    echo -e "[CPU]     : $CPU"
+    echo -e "[Memory]  : $MEM_USED / $MEM_TOTAL in use"
+    
+    local DISK_USE=$(df -h / | awk 'NR==2 {print $5}')
+    local DISK_AVAIL=$(df -h / | awk 'NR==2 {print $4}')
+    
+    if [ "${DISK_USE%?}" -gt 85 ]; then
+        echo -e "\e[31m[Disk]    : / is at $DISK_USE (Only $DISK_AVAIL free!) - WARNING\e[0m"
+    else
+        echo -e "[Disk]    : / is at $DISK_USE ($DISK_AVAIL available)"
+    fi
+    echo -e "\e[1m=======================================================================\e[0m\n"
+}
+
+# =============================================================================
+# 9. STARTUP EXECUTION
+# =============================================================================
+greetings() {
+    DAY=$(date "+%A")
+    case $DAY in
+        "Sunday")    echo "Happy Sunday! Time to recover and prep for the week ahead." ;;
+        "Monday")    echo "I know it's Monday, but you got this, एचटीएन! If you can't - Surrender to Bholenath 🙏🙏" ;;
+        "Tuesday")   echo "Happy Tuesday! Lord Mahavir got your back!! Jai Shree Ram 🙏🙏" ;;
+        "Wednesday") echo "HUMP DAAAAAAAAAAAAY!" ;;
+        "Thursday")  echo "One more day until the weekend, hang in there!" ;;
+        "Friday")    echo "Happy Friday! Night shifts almost over!" ;;
+        "Saturday")  echo "It's Saturday, why are you even in the terminal... :)" ;;
+    esac
+}
+
+# Initialize Prompt and Run Startup Functions
+eval "$(starship init bash)"
+greetings
+sysinfo
