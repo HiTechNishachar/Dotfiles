@@ -34,7 +34,7 @@ bind "set completion-ignore-case on"
 # =============================================================================
 # 3. ALIASES: SAFETY & BASICS
 # =============================================================================
-# Ensure aliases work when using sudo
+# Ensure aliases expand properly when using sudo
 alias sudo='sudo '
 
 alias rm='rm -i'
@@ -69,15 +69,30 @@ alias search='apt search'
 alias purge='sudo apt purge'
 
 # =============================================================================
-# 6. SYSTEM DIAGNOSTICS & HYBRID GRAPHICS
+# 6. SYSTEM DIAGNOSTICS & MANUAL GPU TOGGLES
 # =============================================================================
 alias sysfails='systemctl --failed'
 alias syserrors='journalctl -p 3 -xb'
 alias sysauth='journalctl -u ssh.service -u sudo -f'
 alias openports='netstat -nape --inet'
 
-# Native NVIDIA PRIME Render Offload
-alias prime-run='__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia'
+# Disable NVIDIA GPU entirely (Max Battery)
+gpu-off() {
+    echo -e "\n[\e[31mDisabling NVIDIA GPU\e[0m] Writing manual blacklists..."
+    sudo sh -c 'echo -e "blacklist nouveau\nblacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset" > /etc/modprobe.d/disable-nvidia.conf'
+    sudo sh -c 'echo "ACTION==\"add\", SUBSYSTEM==\"pci\", ATTR{vendor}==\"0x10de\", ATTR{class}==\"0x030000\", ATTR{remove}=\"1\"" > /etc/udev/rules.d/00-disable-nvidia.rules'
+    sudo update-initramfs -u
+    echo -e "Done. \e[1;33mPlease reboot to apply.\e[0m\n"
+}
+
+# Enable NVIDIA GPU (Gaming / Heavy 3D)
+gpu-on() {
+    echo -e "\n[\e[32mEnabling NVIDIA GPU\e[0m] Removing manual blacklists..."
+    sudo rm -f /etc/modprobe.d/disable-nvidia.conf
+    sudo rm -f /etc/udev/rules.d/00-disable-nvidia.rules
+    sudo update-initramfs -u
+    echo -e "Done. \e[1;33mPlease reboot to apply.\e[0m\n"
+}
 
 # =============================================================================
 # 7. CUSTOM FUNCTIONS (FILE OPS & EXTRACTION)
@@ -143,12 +158,13 @@ myhelp() {
     echo -e ""
     echo -e "\e[1;32mSYSTEM & LOGS:\e[0m"
     echo -e "  sysfails        : Show crashed systemd services"
-    echo -e "  syserrors       : Show kernel/hardware errors via journalctl (use sudo)"
+    echo -e "  syserrors       : Show kernel/hardware errors via journalctl"
     echo -e "  sysauth         : Watch SSH/sudo attempts live"
     echo -e "  openports       : Show all open network ports"
     echo -e ""
-    echo -e "\e[1;32mGRAPHICS (Hybrid Mode):\e[0m"
-    echo -e "  prime-run <app> : Force application to render on NVIDIA GPU"
+    echo -e "\e[1;32mGRAPHICS (Manual GPU Control):\e[0m"
+    echo -e "  gpu-off         : Disable NVIDIA card and drop from PCI bus (Battery)"
+    echo -e "  gpu-on          : Re-enable NVIDIA card (Gaming)"
     echo -e "\e[1;36m===========================================================\e[0m"
 }
 
